@@ -73,6 +73,7 @@ const Home = () => {
       .then((response) => response.json())
       .then((response: ApiResponse) => {
         sendMessage({ role: "assistant", content: response.content });
+        setDocuments(response.documents);
       });
   };
 
@@ -151,39 +152,19 @@ const Home = () => {
           </Card>
         </div>
         <div className="w-[600px]">
-          <Accordion type="single" collapsible>
-            <AccordionItem value="item-1">
-              <AccordionTrigger>관련 문서 1</AccordionTrigger>
-              <AccordionContent>
-                <Textarea
-                  className="h-48 w-[580px] m-auto mt-5 mb-5"
-                  value={documents[0]}
-                  readOnly
-                />
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="item-2">
-              <AccordionTrigger>관련 문서 2</AccordionTrigger>
-              <AccordionContent>
-                <Textarea
-                  className="h-48 w-[580px] m-auto mt-5 mb-5"
-                  value={documents[1]}
-                  readOnly
-                />
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="item-3">
-              <AccordionTrigger>관련 문서 3</AccordionTrigger>
-              <AccordionContent>
-                <Textarea
-                  className="h-48 w-[580px] m-auto mt-5 mb-5"
-                  value={documents[2]}
-                  readOnly
-                />
-              </AccordionContent>
-            </AccordionItem>
+          <Accordion type="single" collapsible className="w-full">
+            {documents.map((document, index) => (
+              <AccordionItem value={document.page_content} key={index}>
+                <AccordionTrigger>관련 문서 {index + 1}</AccordionTrigger>
+                <AccordionContent>
+                  <Textarea
+                    className="h-48 w-[580px] m-auto mt-5 mb-5"
+                    readOnly
+                    value={document.page_content}
+                  />
+                </AccordionContent>
+              </AccordionItem>
+            ))}
           </Accordion>
         </div>
       </div>

@@ -54,6 +54,7 @@ const Home = () => {
   ]);
   const [message, setMessage] = useState<Message>();
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [isDone, setIsDone] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -64,7 +65,9 @@ const Home = () => {
   // 메시지 전송 함수
   const sendMessage = ({ role, content }: Message) => {
     setMessages((prev) => [...prev, { role, content }]);
-    setMessage({ role: "user", content: "" });
+    if (role === "user") {
+      setMessage({ role: "user", content: "" });
+    }
   };
 
   // ChatBot API 응답 요청 함수
@@ -74,6 +77,7 @@ const Home = () => {
       .then((response: ApiResponse) => {
         sendMessage({ role: "assistant", content: response.content });
         setDocuments(response.documents);
+        setIsDone(true);
       });
   };
 
@@ -130,11 +134,15 @@ const Home = () => {
                   }
                   onKeyUp={(e) => {
                     if (e.key === "Enter") {
-                      sendMessage({
-                        role: "user",
-                        content: message?.content || "",
-                      });
-                      requestChatResponse(message?.content || "");
+                      if (isDone) {
+                        setIsDone(false);
+                        sendMessage({
+                          role: "user",
+                          content: message?.content || "",
+                        });
+
+                        requestChatResponse(message?.content || "");
+                      }
                     }
                   }}
                   placeholder="메시지를 입력하세요..."

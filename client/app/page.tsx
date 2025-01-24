@@ -1,11 +1,17 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Send } from "lucide-react";
 
@@ -96,7 +102,23 @@ const Home = () => {
     <>
       <div className="flex justify-center gap-5 ms-5 mr-5 mt-5">
         <div>
-          <Card className="flex flex-col w-[700px] h-[600px]">
+          <Card className="flex flex-col w-[700px] h-[700px]">
+            <CardHeader>
+              <CardTitle>ChatBot</CardTitle>
+              <CardDescription>
+                <p>주택청약 궁금하신 점 있으시면 무엇이든 물어보세요.</p>
+                <p>
+                  <a
+                    href="https://www.molit.go.kr/portal.do"
+                    className="font-medium underline underline-offset-4"
+                    target="_blank"
+                  >
+                    국토교통부
+                  </a>
+                  의 2024년 5월 주택청약 FAQ 문서 기반으로 답변해드립니다.
+                </p>
+              </CardDescription>
+            </CardHeader>
             <ScrollArea className="flex-1 p-4">
               <div ref={scrollRef}>
                 {messages.map((message, index) => (
@@ -107,9 +129,11 @@ const Home = () => {
                     }`}
                   >
                     <Avatar className="h-8 w-8">
-                      <div className="bg-primary text-primary-foreground w-full h-full flex items-center justify-center text-sm">
-                        {message.role === "user" ? "U" : "A"}
-                      </div>
+                      {message.role === "user" ? (
+                        <AvatarImage src="https://cdn.pixabay.com/photo/2016/08/31/11/54/icon-1633249_1280.png" />
+                      ) : (
+                        <AvatarImage src="https://cdn.pixabay.com/photo/2019/09/13/15/32/graduation-4474213_960_720.png" />
+                      )}
                     </Avatar>
                     <div
                       className={`rounded-lg px-3 py-2 max-w-[80%] ${

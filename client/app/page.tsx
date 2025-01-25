@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
-import { Send } from "lucide-react";
+import { Send, FileSearch, Loader, Divide } from "lucide-react";
 
 import {
   Accordion,
@@ -37,6 +37,8 @@ import {
   MenubarSubTrigger,
   MenubarTrigger,
 } from "@/components/ui/menubar";
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Message {
   role: "user" | "assistant";
@@ -72,7 +74,11 @@ interface ApiResponse {
 
 const Home = () => {
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "안녕하세요! 무엇을 도와드릴까요?" },
+    {
+      role: "assistant",
+      content:
+        "저는 주택청약과 관련된 정보와 질문에 대한 답변을 도와드릴 수 있습니다. 청약 자격, 거주의무, 우선공급 조건 등 다양한 주제에 대해 설명해 드릴 수 있습니다. 궁금한 점이 있으시면 언제든지 질문해 주세요!",
+    },
   ]);
   const [message, setMessage] = useState<Message>();
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -119,9 +125,9 @@ const Home = () => {
 
   return (
     <>
-      <div className="flex justify-center gap-5 mx-auto mt-5">
+      <div className="flex justify-center mx-auto mt-5">
         <div>
-          <Card className="flex flex-col w-[700px] h-[700px]">
+          <Card className="flex flex-col w-[700px] h-[700px] rounded-r-none">
             <Menubar className="border-t-0 border-s-0 border-r-0">
               <MenubarMenu>
                 <MenubarTrigger>File</MenubarTrigger>
@@ -212,7 +218,7 @@ const Home = () => {
               </MenubarMenu>
             </Menubar>
             <CardHeader>
-              <CardTitle>ChatBot</CardTitle>
+              <CardTitle>AI 도우미</CardTitle>
               <CardDescription>
                 <p>주택청약 궁금하신 점 있으시면 무엇이든 물어보세요.</p>
                 <p>
@@ -255,6 +261,14 @@ const Home = () => {
                     </div>
                   </div>
                 ))}
+                {!isDone && (
+                  <div className="flex justify-start">
+                    <Loader className="w-6 h-6 animate-spin" />
+                    <p className="text-sm text-muted-foreground mt-0.5 ms-1">
+                      답변을 작성하고 있습니다...
+                    </p>
+                  </div>
+                )}
               </div>
             </ScrollArea>
 
@@ -292,22 +306,64 @@ const Home = () => {
             </CardContent>
           </Card>
         </div>
-        <div className="w-[600px]">
-          <Accordion type="single" collapsible className="w-full">
-            {documents.map((document, index) => (
-              <AccordionItem value={document.page_content} key={index}>
-                <AccordionTrigger>관련 문서 {index + 1}</AccordionTrigger>
-                <AccordionContent>
-                  <Textarea
-                    className="h-48 w-[580px] m-auto mt-5 mb-5"
-                    readOnly
-                    value={document.page_content}
-                  />
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </div>
+
+        <Card className="w-[600px] border-s-0 rounded-b-none rounded-s-none ms-0">
+          <CardHeader>
+            <CardTitle>참고 문서</CardTitle>
+          </CardHeader>
+          <CardContent className="h-full">
+            <Tabs defaultValue="markdown" className="h-full">
+              <TabsList>
+                <TabsTrigger value="markdown">Markdown</TabsTrigger>
+                <TabsTrigger value="pdf">PDF</TabsTrigger>
+              </TabsList>
+              {/* 마크다운 */}
+              <TabsContent value="markdown" className="h-full">
+                {documents.length <= 0 && (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <div>
+                      <div className="flex justify-center">
+                        <FileSearch size={48} className="mb-2" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        AI 도우미에게 질문하시면 관련 문서를 찾아드려요.
+                      </p>
+                    </div>
+                  </div>
+                )}
+                <Accordion type="single" collapsible className="w-full">
+                  {documents.map((document, index) => (
+                    <AccordionItem value={document.page_content} key={index}>
+                      <AccordionTrigger>관련 문서 {index + 1}</AccordionTrigger>
+                      <AccordionContent className="w-full overflow-hidden">
+                        <Textarea
+                          className="h-96 mt-1 w-[98%] mx-auto"
+                          readOnly
+                          value={document.page_content}
+                        />
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </TabsContent>
+              {/* PDF */}
+              <TabsContent value="pdf" className="h-full">
+                <div className="h-full">
+                  <div className="w-full h-[100%] flex items-center justify-center">
+                    <div>
+                      <div className="flex justify-center">
+                        <FileSearch size={48} className="mb-2" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        AI 도우미에게 질문하시면 관련 문서를 찾아드려요.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </>
   );

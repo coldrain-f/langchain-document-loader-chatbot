@@ -98,6 +98,13 @@ def question(question: str):
             "documents": [{"page_content": doc.page_content, "metadata": doc.metadata} for doc in context]
     }
 
+# 벡터 DB에 등록된 파일 정보를 Json으로 응답한다.
+@app.get("/vector-db/files")
+def getRegisteredFiles():
+    dir_list = os.listdir('./files/indexed/')
+    print(dir_list)
+    return [{"file_name": item} for item in dir_list]
+
 @app.get("/")
 def root():
     # 환경변수 불러오기

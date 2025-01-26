@@ -12,8 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import { Textarea } from "@/components/ui/textarea";
-import { Send, FileSearch, Loader, Divide } from "lucide-react";
+import { Send, FileSearch, Loader } from "lucide-react";
 
 import {
   Accordion,
@@ -39,6 +38,8 @@ import {
 } from "@/components/ui/menubar";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+
 import ReactMarkdown from "react-markdown";
 
 interface Message {
@@ -290,9 +291,9 @@ const Home = () => {
                 {!isDone && (
                   <div className="flex justify-start">
                     <Loader className="w-6 h-6 animate-spin" />
-                    <p className="text-sm text-muted-foreground mt-0.5 ms-1">
+                    {/* <p className="text-sm text-muted-foreground mt-0.5 ms-1">
                       답변을 작성하고 있습니다...
-                    </p>
+                    </p> */}
                   </div>
                 )}
               </div>
@@ -335,15 +336,26 @@ const Home = () => {
 
         <Card className="w-[600px] border-s-0 rounded-b-none rounded-s-none ms-0">
           <CardHeader>
-            <CardTitle>참고 문서</CardTitle>
-            <CardDescription></CardDescription>
+            <CardTitle>
+              <div className="flex justify-between">
+                <span>참고 문서</span>
+                <div className="flex items-center space-x-2">
+                  <Switch id="airplane-mode" />
+                </div>
+              </div>
+            </CardTitle>
+            <CardDescription>
+              해당 기능을 켜면 AI가 요약 정리 및 어떤 문서를 참고했는지 확인할
+              수 있습니다. <br />
+              빠른 답변이 필요하다면 끄는 것을 추천합니다
+            </CardDescription>
           </CardHeader>
           <CardContent className="h-full">
             <Tabs defaultValue="markdown" className="h-full">
               <TabsList>
-                <TabsTrigger value="markdown">Markdown</TabsTrigger>
-                <TabsTrigger value="pdf">PDF</TabsTrigger>
-                <TabsTrigger value="metadata">Metadata</TabsTrigger>
+                <TabsTrigger value="markdown">요약 정리</TabsTrigger>
+                <TabsTrigger value="pdf">PDF 이미지</TabsTrigger>
+                <TabsTrigger value="metadata">메타데이터</TabsTrigger>
               </TabsList>
               {/* 마크다운 */}
               <TabsContent value="markdown" className="h-full">

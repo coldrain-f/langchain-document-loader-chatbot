@@ -37,6 +37,14 @@ import {
   MenubarTrigger,
 } from "@/components/ui/menubar";
 
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 
@@ -151,10 +159,10 @@ const Home = () => {
   const handleMessageSendClick = () => {};
 
   return (
-    <>
-      <div className="flex justify-center mx-auto mt-5">
+    <div className="h-screen pt-10">
+      <div className="flex justify-center">
         <div>
-          <Card className="flex flex-col w-[700px] h-[700px] rounded-r-none">
+          <Card className="flex flex-col w-[700px] h-[705px] rounded-r-none">
             <Menubar className="border-t-0 border-s-0 border-r-0">
               <MenubarMenu>
                 <MenubarTrigger>File</MenubarTrigger>
@@ -334,13 +342,13 @@ const Home = () => {
           </Card>
         </div>
 
-        <Card className="w-[600px] border-s-0 rounded-b-none rounded-s-none ms-0">
+        <Card className="w-[600px] h-[705px] border-s-0 rounded-b-none rounded-s-none ms-0">
           <CardHeader>
             <CardTitle>
               <div className="flex justify-between">
                 <span>참고 문서</span>
                 <div className="flex items-center space-x-2">
-                  <Switch id="airplane-mode" />
+                  <Switch id="airplane-mode" defaultChecked />
                 </div>
               </div>
             </CardTitle>
@@ -350,38 +358,16 @@ const Home = () => {
               빠른 답변이 필요하다면 끄는 것을 추천합니다
             </CardDescription>
           </CardHeader>
-          <CardContent className="h-full">
-            <Tabs defaultValue="markdown" className="h-full">
-              <TabsList>
-                <TabsTrigger value="markdown">요약 정리</TabsTrigger>
-                <TabsTrigger value="pdf">PDF 이미지</TabsTrigger>
-                <TabsTrigger value="metadata">메타데이터</TabsTrigger>
-              </TabsList>
-              {/* 마크다운 */}
-              <TabsContent value="markdown" className="h-full">
-                {documents.length <= 0 && (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <div>
-                      <div className="flex justify-center">
-                        <FileSearch size={48} className="mb-2" />
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        AI 도우미에게 질문하시면 관련 문서를 찾아드려요.
-                      </p>
-                    </div>
-                  </div>
-                )}
-                {documents.length > 0 && (
-                  <ScrollArea className="h-[545px] w-full">
-                    <div className="prose p-3">
-                      <ReactMarkdown>{markdown}</ReactMarkdown>
-                    </div>
-                  </ScrollArea>
-                )}
-              </TabsContent>
-              {/* PDF */}
-              <TabsContent value="pdf" className="h-full">
-                <div className="h-full">
+          <div className="h-[560px]">
+            <CardContent className="h-full w-full">
+              <Tabs defaultValue="markdown" className="h-full">
+                <TabsList>
+                  <TabsTrigger value="markdown">요약 정리</TabsTrigger>
+                  <TabsTrigger value="pdf">PDF 이미지</TabsTrigger>
+                  <TabsTrigger value="metadata">메타데이터</TabsTrigger>
+                </TabsList>
+                {/* 마크다운 */}
+                <TabsContent value="markdown" className="h-full ">
                   {documents.length <= 0 && (
                     <div className="w-full h-full flex items-center justify-center">
                       <div>
@@ -394,34 +380,92 @@ const Home = () => {
                       </div>
                     </div>
                   )}
-
                   {documents.length > 0 && (
-                    <ScrollArea className="h-[550px]">
-                      <img src={image} className="w-full h-auto" />
+                    <ScrollArea className="h-[530px] w-full">
+                      <div className="prose p-3">
+                        <ReactMarkdown>{markdown}</ReactMarkdown>
+                      </div>
                     </ScrollArea>
                   )}
-                </div>
-              </TabsContent>
-              {/* Metadata */}
-              <TabsContent value="metadata" className="h-full">
-                <Accordion type="single" collapsible className="w-full">
-                  {documents.map((document, index) => (
-                    <AccordionItem value={document.page_content} key={index}>
-                      <AccordionTrigger>관련 문서 {index + 1}</AccordionTrigger>
-                      <AccordionContent className="w-full overflow-hidden">
-                        <pre className="p-4 bg-gray-100">
-                          {formatJson(document.metadata)}
-                        </pre>
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
+                </TabsContent>
+                {/* PDF */}
+                <TabsContent value="pdf" className="h-full w-full">
+                  <div className="h-full">
+                    {documents.length <= 0 && (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div>
+                          <div className="flex justify-center">
+                            <FileSearch size={48} className="mb-2" />
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            AI 도우미에게 질문하시면 관련 문서를 찾아드려요.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    <Carousel className="w-[98%] mx-auto">
+                      <CarouselContent>
+                        <CarouselItem>
+                          {documents.length > 0 && (
+                            <ScrollArea className="h-[550px]">
+                              {/* <img src={image} className="w-full h-auto" /> */}
+                            </ScrollArea>
+                          )}
+                        </CarouselItem>
+                        <CarouselItem>
+                          {documents.length > 0 && (
+                            <ScrollArea className="h-[530px]">
+                              <img src={image} className="w-full h-auto" />
+                            </ScrollArea>
+                          )}
+                        </CarouselItem>
+                      </CarouselContent>
+                      <CarouselPrevious />
+                      <CarouselNext />
+                    </Carousel>
+                  </div>
+                </TabsContent>
+                {/* Metadata */}
+                <TabsContent value="metadata" className="h-full">
+                  <Accordion
+                    type="single"
+                    collapsible
+                    className="w-full h-full"
+                  >
+                    {documents.length <= 0 && (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div>
+                          <div className="flex justify-center">
+                            <FileSearch size={48} className="mb-2" />
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            AI 도우미에게 질문하시면 관련 문서를 찾아드려요.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {documents.map((document, index) => (
+                      <AccordionItem value={document.page_content} key={index}>
+                        <AccordionTrigger>
+                          관련 문서 {index + 1}
+                        </AccordionTrigger>
+                        <AccordionContent className="w-full overflow-hidden">
+                          <pre className="p-4 bg-gray-100">
+                            {formatJson(document.metadata)}
+                          </pre>
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </div>
         </Card>
       </div>
-    </>
+    </div>
   );
 };
 

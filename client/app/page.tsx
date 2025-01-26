@@ -100,6 +100,8 @@ const Home = () => {
 
   // 임시 이미지
   const [image, setImage] = useState();
+  const [image2, setImage2] = useState();
+  const [image3, setImage3] = useState();
 
   // 파일 이름 배열
   const [fileNames, setFileNames] = useState([]);
@@ -110,13 +112,18 @@ const Home = () => {
     handleScrollToBottom();
   }, [messages]);
 
-  const fetchImage = () => {
-    fetch("http://localhost:8000/image/200")
+  const fetchImage = (documents: Document[]) => {
+    fetch("http://localhost:8000/image/" + (documents[0].metadata.page + 1))
       .then((response) => response.blob())
-      .then((blob) => {
-        const imageUrl = URL.createObjectURL(blob);
-        setImage(imageUrl);
-      });
+      .then((blob) => setImage(URL.createObjectURL(blob)));
+
+    fetch("http://localhost:8000/image/" + (documents[1].metadata.page + 1))
+      .then((response) => response.blob())
+      .then((blob) => setImage2(URL.createObjectURL(blob)));
+
+    fetch("http://localhost:8000/image/" + (documents[2].metadata.page + 1))
+      .then((response) => response.blob())
+      .then((blob) => setImage3(URL.createObjectURL(blob)));
   };
 
   // 메시지 전송 함수
@@ -137,7 +144,7 @@ const Home = () => {
         // 임시 마크다운
         setMarkdown(response.markdown);
         // 임시 이미지 설정
-        fetchImage();
+        fetchImage(response.documents);
         setIsDone(true);
       });
   };
@@ -163,95 +170,6 @@ const Home = () => {
       <div className="flex justify-center">
         <div>
           <Card className="flex flex-col w-[700px] h-[705px] rounded-r-none">
-            <Menubar className="border-t-0 border-s-0 border-r-0">
-              <MenubarMenu>
-                <MenubarTrigger>File</MenubarTrigger>
-                <MenubarContent>
-                  <MenubarItem>
-                    New Tab <MenubarShortcut>⌘T</MenubarShortcut>
-                  </MenubarItem>
-                  <MenubarItem>
-                    New Window <MenubarShortcut>⌘N</MenubarShortcut>
-                  </MenubarItem>
-                  <MenubarItem disabled>New Incognito Window</MenubarItem>
-                  <MenubarSeparator />
-                  <MenubarSub>
-                    <MenubarSubTrigger>Share</MenubarSubTrigger>
-                    <MenubarSubContent>
-                      <MenubarItem>Email link</MenubarItem>
-                      <MenubarItem>Messages</MenubarItem>
-                      <MenubarItem>Notes</MenubarItem>
-                    </MenubarSubContent>
-                  </MenubarSub>
-                  <MenubarSeparator />
-                  <MenubarItem>
-                    Print... <MenubarShortcut>⌘P</MenubarShortcut>
-                  </MenubarItem>
-                </MenubarContent>
-              </MenubarMenu>
-              <MenubarMenu>
-                <MenubarTrigger>Edit</MenubarTrigger>
-                <MenubarContent>
-                  <MenubarItem>
-                    Undo <MenubarShortcut>⌘Z</MenubarShortcut>
-                  </MenubarItem>
-                  <MenubarItem>
-                    Redo <MenubarShortcut>⇧⌘Z</MenubarShortcut>
-                  </MenubarItem>
-                  <MenubarSeparator />
-                  <MenubarSub>
-                    <MenubarSubTrigger>Find</MenubarSubTrigger>
-                    <MenubarSubContent>
-                      <MenubarItem>Search the web</MenubarItem>
-                      <MenubarSeparator />
-                      <MenubarItem>Find...</MenubarItem>
-                      <MenubarItem>Find Next</MenubarItem>
-                      <MenubarItem>Find Previous</MenubarItem>
-                    </MenubarSubContent>
-                  </MenubarSub>
-                  <MenubarSeparator />
-                  <MenubarItem>Cut</MenubarItem>
-                  <MenubarItem>Copy</MenubarItem>
-                  <MenubarItem>Paste</MenubarItem>
-                </MenubarContent>
-              </MenubarMenu>
-              <MenubarMenu>
-                <MenubarTrigger>View</MenubarTrigger>
-                <MenubarContent>
-                  <MenubarCheckboxItem>
-                    Always Show Bookmarks Bar
-                  </MenubarCheckboxItem>
-                  <MenubarCheckboxItem checked>
-                    Always Show Full URLs
-                  </MenubarCheckboxItem>
-                  <MenubarSeparator />
-                  <MenubarItem inset>
-                    Reload <MenubarShortcut>⌘R</MenubarShortcut>
-                  </MenubarItem>
-                  <MenubarItem disabled inset>
-                    Force Reload <MenubarShortcut>⇧⌘R</MenubarShortcut>
-                  </MenubarItem>
-                  <MenubarSeparator />
-                  <MenubarItem inset>Toggle Fullscreen</MenubarItem>
-                  <MenubarSeparator />
-                  <MenubarItem inset>Hide Sidebar</MenubarItem>
-                </MenubarContent>
-              </MenubarMenu>
-              <MenubarMenu>
-                <MenubarTrigger>Profiles</MenubarTrigger>
-                <MenubarContent>
-                  <MenubarRadioGroup value="benoit">
-                    <MenubarRadioItem value="andy">Andy</MenubarRadioItem>
-                    <MenubarRadioItem value="benoit">Benoit</MenubarRadioItem>
-                    <MenubarRadioItem value="Luis">Luis</MenubarRadioItem>
-                  </MenubarRadioGroup>
-                  <MenubarSeparator />
-                  <MenubarItem inset>Edit...</MenubarItem>
-                  <MenubarSeparator />
-                  <MenubarItem inset>Add Profile...</MenubarItem>
-                </MenubarContent>
-              </MenubarMenu>
-            </Menubar>
             <CardHeader>
               <CardTitle>AI 도우미</CardTitle>
               <CardDescription>
@@ -367,7 +285,8 @@ const Home = () => {
                   <TabsTrigger value="metadata">메타데이터</TabsTrigger>
                 </TabsList>
                 {/* 마크다운 */}
-                <TabsContent value="markdown" className="h-full ">
+
+                <TabsContent value="markdown" className="h-full">
                   {documents.length <= 0 && (
                     <div className="w-full h-full flex items-center justify-center">
                       <div>
@@ -408,15 +327,23 @@ const Home = () => {
                       <CarouselContent>
                         <CarouselItem>
                           {documents.length > 0 && (
-                            <ScrollArea className="h-[550px]">
-                              {/* <img src={image} className="w-full h-auto" /> */}
+                            <ScrollArea className="h-[530px]">
+                              <img src={image} className="w-full h-auto" />
                             </ScrollArea>
                           )}
                         </CarouselItem>
                         <CarouselItem>
                           {documents.length > 0 && (
                             <ScrollArea className="h-[530px]">
-                              <img src={image} className="w-full h-auto" />
+                              <img src={image2} className="w-full h-auto" />
+                            </ScrollArea>
+                          )}
+                        </CarouselItem>
+
+                        <CarouselItem>
+                          {documents.length > 0 && (
+                            <ScrollArea className="h-[530px]">
+                              <img src={image3} className="w-full h-auto" />
                             </ScrollArea>
                           )}
                         </CarouselItem>
@@ -449,7 +376,7 @@ const Home = () => {
                     {documents.map((document, index) => (
                       <AccordionItem value={document.page_content} key={index}>
                         <AccordionTrigger>
-                          관련 문서 {index + 1}
+                          컨텍스트 {index + 1}
                         </AccordionTrigger>
                         <AccordionContent className="w-full overflow-hidden">
                           <pre className="p-4 bg-gray-100">

@@ -1,4 +1,6 @@
 venv/
 server/.env
+server/app/files
+server/app/files/indexed
 server/app/__pycache__
 server/app/faiss_index

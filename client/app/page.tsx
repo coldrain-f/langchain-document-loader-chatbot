@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/menubar";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ReactMarkdown from "react-markdown";
 
 interface Message {
   role: "user" | "assistant";
@@ -69,6 +70,7 @@ interface Document {
 
 interface ApiResponse {
   documents: Document[];
+  markdown: string;
   content: string;
 }
 
@@ -84,6 +86,12 @@ const Home = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isDone, setIsDone] = useState(true);
 
+  // 임시 마크다운
+  const [markdown, setMarkdown] = useState("");
+
+  // 임시 이미지
+  const [image, setImage] = useState();
+
   // 파일 이름 배열
   const [fileNames, setFileNames] = useState([]);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -92,6 +100,15 @@ const Home = () => {
     // 사용자의 신규 메시지가 추가되면 맨 밑으로 스크롤 이동
     handleScrollToBottom();
   }, [messages]);
+
+  const fetchImage = () => {
+    fetch("http://localhost:8000/image/200")
+      .then((response) => response.blob())
+      .then((blob) => {
+        const imageUrl = URL.createObjectURL(blob);
+        setImage(imageUrl);
+      });
+  };
 
   // 메시지 전송 함수
   const sendMessage = ({ role, content }: Message) => {
@@ -108,6 +125,10 @@ const Home = () => {
       .then((response: ApiResponse) => {
         sendMessage({ role: "assistant", content: response.content });
         setDocuments(response.documents);
+        // 임시 마크다운
+        setMarkdown(response.markdown);
+        // 임시 이미지 설정
+        fetchImage();
         setIsDone(true);
       });
   };
@@ -119,6 +140,11 @@ const Home = () => {
       block: "end",
       inline: "nearest",
     });
+  };
+
+  // JSON
+  const formatJson = (medatadata: Metadata) => {
+    return JSON.stringify(medatadata, null, 2);
   };
 
   const handleMessageSendClick = () => {};
@@ -310,12 +336,14 @@ const Home = () => {
         <Card className="w-[600px] border-s-0 rounded-b-none rounded-s-none ms-0">
           <CardHeader>
             <CardTitle>참고 문서</CardTitle>
+            <CardDescription></CardDescription>
           </CardHeader>
           <CardContent className="h-full">
             <Tabs defaultValue="markdown" className="h-full">
               <TabsList>
                 <TabsTrigger value="markdown">Markdown</TabsTrigger>
                 <TabsTrigger value="pdf">PDF</TabsTrigger>
+                <TabsTrigger value="metadata">Metadata</TabsTrigger>
               </TabsList>
               {/* 마크다운 */}
               <TabsContent value="markdown" className="h-full">
@@ -331,35 +359,51 @@ const Home = () => {
                     </div>
                   </div>
                 )}
+                {documents.length > 0 && (
+                  <ScrollArea className="h-[545px] w-full">
+                    <div className="prose p-3">
+                      <ReactMarkdown>{markdown}</ReactMarkdown>
+                    </div>
+                  </ScrollArea>
+                )}
+              </TabsContent>
+              {/* PDF */}
+              <TabsContent value="pdf" className="h-full">
+                <div className="h-full">
+                  {documents.length <= 0 && (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <div>
+                        <div className="flex justify-center">
+                          <FileSearch size={48} className="mb-2" />
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          AI 도우미에게 질문하시면 관련 문서를 찾아드려요.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {documents.length > 0 && (
+                    <ScrollArea className="h-[550px]">
+                      <img src={image} className="w-full h-auto" />
+                    </ScrollArea>
+                  )}
+                </div>
+              </TabsContent>
+              {/* Metadata */}
+              <TabsContent value="metadata" className="h-full">
                 <Accordion type="single" collapsible className="w-full">
                   {documents.map((document, index) => (
                     <AccordionItem value={document.page_content} key={index}>
                       <AccordionTrigger>관련 문서 {index + 1}</AccordionTrigger>
                       <AccordionContent className="w-full overflow-hidden">
-                        <Textarea
-                          className="h-96 mt-1 w-[98%] mx-auto"
-                          readOnly
-                          value={document.page_content}
-                        />
+                        <pre className="p-4 bg-gray-100">
+                          {formatJson(document.metadata)}
+                        </pre>
                       </AccordionContent>
                     </AccordionItem>
                   ))}
                 </Accordion>
-              </TabsContent>
-              {/* PDF */}
-              <TabsContent value="pdf" className="h-full">
-                <div className="h-full">
-                  <div className="w-full h-[100%] flex items-center justify-center">
-                    <div>
-                      <div className="flex justify-center">
-                        <FileSearch size={48} className="mb-2" />
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        AI 도우미에게 질문하시면 관련 문서를 찾아드려요.
-                      </p>
-                    </div>
-                  </div>
-                </div>
               </TabsContent>
             </Tabs>
           </CardContent>

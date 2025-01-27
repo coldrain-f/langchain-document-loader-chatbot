@@ -34,12 +34,7 @@ import { Switch } from "@/components/ui/switch";
 
 import ReactMarkdown from "react-markdown";
 
-import type {
-  Message,
-  Metadata,
-  Document,
-  ApiResponse,
-} from "@/app/types/common";
+import type { Message, Metadata, Document } from "@/app/types/common";
 
 const defaultMessage: Message = {
   role: "assistant",
@@ -49,17 +44,18 @@ const defaultMessage: Message = {
 
 const Home = () => {
   const [messages, setMessages] = useState<Message[]>([defaultMessage]);
-  const [message, setMessage] = useState<Message>();
+  const [question, setQuestion] = useState<Message>();
+  const [markdownSummary, setMarkdownSummary] = useState("");
+  const [includeAdditionalInfo, setIncludeAdditionalInfo] = useState(true);
+  const [pdfImageSources, setPdfImageSources] = useState<string[]>([]);
+
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [isDone, setIsDone] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // 임시 마크다운
-  const [markdown, setMarkdown] = useState("");
-
-  // 임시 이미지
-  const [image, setImage] = useState();
-  const [image2, setImage2] = useState();
-  const [image3, setImage3] = useState();
+  const userProfileImage =
+    "https://cdn.pixabay.com/photo/2016/08/31/11/54/icon-1633249_1280.png";
+  const assistantProfileImage =
+    "https://cdn.pixabay.com/photo/2019/09/13/15/32/graduation-4474213_960_720.png";
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -68,40 +64,34 @@ const Home = () => {
     handleScrollToBottom();
   }, [messages]);
 
-  const fetchImage = (documents: Document[]) => {
-    fetch("http://localhost:8000/image/" + (documents[0].metadata.page + 1))
-      .then((response) => response.blob())
-      .then((blob) => setImage(URL.createObjectURL(blob)));
-
-    fetch("http://localhost:8000/image/" + (documents[1].metadata.page + 1))
-      .then((response) => response.blob())
-      .then((blob) => setImage2(URL.createObjectURL(blob)));
-
-    fetch("http://localhost:8000/image/" + (documents[2].metadata.page + 1))
-      .then((response) => response.blob())
-      .then((blob) => setImage3(URL.createObjectURL(blob)));
-  };
-
-  // 메시지 전송 함수
-  const sendMessage = ({ role, content }: Message) => {
-    setMessages((prev) => [...prev, { role, content }]);
-    if (role === "user") {
-      setMessage({ role: "user", content: "" });
+  // Python 서버에 메시지를 전송하는 함수
+  const sendMessage = (message: Message) => {
+    if (isLoading || !message.content) {
+      return;
     }
-  };
 
-  // ChatBot API 응답 요청 함수
-  const requestChatResponse = (message: string) => {
-    fetch("http://localhost:8000/question/" + message)
-      .then((response) => response.json())
-      .then((response: ApiResponse) => {
-        sendMessage({ role: "assistant", content: response.content });
-        setDocuments(response.documents);
-        // 임시 마크다운
-        setMarkdown(response.markdown);
-        // 임시 이미지 설정
-        fetchImage(response.documents);
-        setIsDone(true);
+    setQuestion({ role: message.role, content: "" });
+    setMessages((prev) => [...prev, message]);
+
+    setIsLoading(true);
+
+    fetch(`http://localhost:8000/api/v1/chatbot/completions/${message.content}`)
+      .then((res) => res.json())
+      .then((res) => {
+        setMarkdownSummary(res.markdown_summary);
+        setDocuments(res.documents);
+        setPdfImageSources(
+          res.pdf_images_base64.map(
+            (base64: string) => `data:image/png;base64,${base64}`
+          )
+        );
+
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: res.answer },
+        ]);
+
+        setIsLoading(false);
       });
   };
 
@@ -118,8 +108,6 @@ const Home = () => {
   const formatJson = (medatadata: Metadata) => {
     return JSON.stringify(medatadata, null, 2);
   };
-
-  const handleMessageSendClick = () => {};
 
   return (
     <div className="h-screen pt-10">
@@ -154,9 +142,9 @@ const Home = () => {
                   >
                     <Avatar className="h-8 w-8">
                       {message.role === "user" ? (
-                        <AvatarImage src="https://cdn.pixabay.com/photo/2016/08/31/11/54/icon-1633249_1280.png" />
+                        <AvatarImage src={userProfileImage} />
                       ) : (
-                        <AvatarImage src="https://cdn.pixabay.com/photo/2019/09/13/15/32/graduation-4474213_960_720.png" />
+                        <AvatarImage src={assistantProfileImage} />
                       )}
                     </Avatar>
                     <div
@@ -170,12 +158,10 @@ const Home = () => {
                     </div>
                   </div>
                 ))}
-                {!isDone && (
+
+                {isLoading && (
                   <div className="flex justify-start">
                     <Loader className="w-6 h-6 animate-spin" />
-                    {/* <p className="text-sm text-muted-foreground mt-0.5 ms-1">
-                      답변을 작성하고 있습니다...
-                    </p> */}
                   </div>
                 )}
               </div>
@@ -184,21 +170,16 @@ const Home = () => {
             <CardContent className="border-t p-4">
               <div className="flex gap-2">
                 <Input
-                  value={message?.content || ""}
+                  value={question?.content || ""}
                   onChange={(e) =>
-                    setMessage({ role: "user", content: e.target.value })
+                    setQuestion({ role: "user", content: e.target.value })
                   }
                   onKeyUp={(e) => {
                     if (e.key === "Enter") {
-                      if (isDone) {
-                        setIsDone(false);
-                        sendMessage({
-                          role: "user",
-                          content: message?.content || "",
-                        });
-
-                        requestChatResponse(message?.content || "");
-                      }
+                      sendMessage({
+                        role: "user",
+                        content: question?.content || "",
+                      });
                     }
                   }}
                   placeholder="메시지를 입력하세요..."
@@ -207,7 +188,12 @@ const Home = () => {
                 <Button
                   type="submit"
                   size="icon"
-                  onClick={handleMessageSendClick}
+                  onClick={() =>
+                    sendMessage({
+                      role: "user",
+                      content: question?.content || "",
+                    })
+                  }
                 >
                   <Send className="h-4 w-4" />
                 </Button>
@@ -222,7 +208,12 @@ const Home = () => {
               <div className="flex justify-between">
                 <span>참고 문서</span>
                 <div className="flex items-center space-x-2">
-                  <Switch id="airplane-mode" defaultChecked />
+                  <Switch
+                    checked={includeAdditionalInfo}
+                    onCheckedChange={(checked) =>
+                      setIncludeAdditionalInfo(checked)
+                    }
+                  />
                 </div>
               </div>
             </CardTitle>
@@ -240,10 +231,10 @@ const Home = () => {
                   <TabsTrigger value="pdf">PDF 이미지</TabsTrigger>
                   <TabsTrigger value="metadata">메타데이터</TabsTrigger>
                 </TabsList>
-                {/* 마크다운 */}
 
+                {/* 마크다운 */}
                 <TabsContent value="markdown" className="h-full">
-                  {documents.length <= 0 && (
+                  {!documents.length ? (
                     <div className="w-full h-full flex items-center justify-center">
                       <div>
                         <div className="flex justify-center">
@@ -254,11 +245,10 @@ const Home = () => {
                         </p>
                       </div>
                     </div>
-                  )}
-                  {documents.length > 0 && (
+                  ) : (
                     <ScrollArea className="h-[530px] w-full">
                       <div className="prose p-3">
-                        <ReactMarkdown>{markdown}</ReactMarkdown>
+                        <ReactMarkdown>{markdownSummary}</ReactMarkdown>
                       </div>
                     </ScrollArea>
                   )}
@@ -266,7 +256,7 @@ const Home = () => {
                 {/* PDF */}
                 <TabsContent value="pdf" className="h-full w-full">
                   <div className="h-full">
-                    {documents.length <= 0 && (
+                    {!documents.length ? (
                       <div className="w-full h-full flex items-center justify-center">
                         <div>
                           <div className="flex justify-center">
@@ -277,36 +267,21 @@ const Home = () => {
                           </p>
                         </div>
                       </div>
+                    ) : (
+                      <Carousel className="w-[98%] mx-auto">
+                        <CarouselContent>
+                          {pdfImageSources.map((source, index) => (
+                            <CarouselItem key={source}>
+                              <ScrollArea className="h-[530px]">
+                                <img src={source} alt={`PDF Image ${index}`} />
+                              </ScrollArea>
+                            </CarouselItem>
+                          ))}
+                        </CarouselContent>
+                        <CarouselPrevious />
+                        <CarouselNext />
+                      </Carousel>
                     )}
-
-                    <Carousel className="w-[98%] mx-auto">
-                      <CarouselContent>
-                        <CarouselItem>
-                          {documents.length > 0 && (
-                            <ScrollArea className="h-[530px]">
-                              <img src={image} className="w-full h-auto" />
-                            </ScrollArea>
-                          )}
-                        </CarouselItem>
-                        <CarouselItem>
-                          {documents.length > 0 && (
-                            <ScrollArea className="h-[530px]">
-                              <img src={image2} className="w-full h-auto" />
-                            </ScrollArea>
-                          )}
-                        </CarouselItem>
-
-                        <CarouselItem>
-                          {documents.length > 0 && (
-                            <ScrollArea className="h-[530px]">
-                              <img src={image3} className="w-full h-auto" />
-                            </ScrollArea>
-                          )}
-                        </CarouselItem>
-                      </CarouselContent>
-                      <CarouselPrevious />
-                      <CarouselNext />
-                    </Carousel>
                   </div>
                 </TabsContent>
                 {/* Metadata */}
@@ -316,7 +291,7 @@ const Home = () => {
                     collapsible
                     className="w-full h-full"
                   >
-                    {documents.length <= 0 && (
+                    {!documents.length && (
                       <div className="w-full h-full flex items-center justify-center">
                         <div>
                           <div className="flex justify-center">

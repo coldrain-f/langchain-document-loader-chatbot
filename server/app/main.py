@@ -1,9 +1,20 @@
-from fastapi import FastAPI, Response
-from typing import List
-import uvicorn 
-import os
+# 환경변수 불러오기
+from dotenv import load_dotenv
 
-# 라이브러리 임포트
+load_dotenv()
+
+# 기타 라이브러리 Import
+from fastapi import FastAPI, Response
+from pydantic import BaseModel
+from typing import List
+
+import uvicorn
+import base64
+import fitz  # PyMuPDF
+import os
+import re
+
+# 라이브러리 Import
 from langchain_core.documents.base import Document
 from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
@@ -12,18 +23,12 @@ from langchain_core.runnables import Runnable
 from langchain.prompts import PromptTemplate
 from langchain.schema.output_parser import StrOutputParser
 
-import fitz  # PyMuPDF
-import re
-
-# 환경변수 불러오기
-from dotenv import load_dotenv, dotenv_values
-
-# CORS 설정
+# CORS 미들웨어 Import
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# CORS 설정
+# ┌───────────────── Middleware ───────────────────────────
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -32,27 +37,31 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# ┌───────────────── Function ───────────────────────────
 # PDF 파일을 List[Document]로 변환
-def read_pdf(file_path: str) -> List[Document]:    
+def read_pdf(file_path: str) -> List[Document]:
     response = []
     loader = PyMuPDFLoader(file_path)
     documents = loader.load()
     for document in documents:
-        document.metadata['file_path'] = file_path
-    
+        document.metadata["file_path"] = file_path
+
     response.extend(documents)
     return response
+
 
 # List[Document]를 벡터 DB에 저장
 def save_to_vector_store(documents: List[Document]) -> None:
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
     vector_store = FAISS.from_documents(documents, embedding=embeddings)
-    vector_store.save_local('faiss_index')
-    
+    vector_store.save_local("faiss_index")
+
+
 def convert_pdf_to_images(pdf_path: str, dpi: int = 250) -> List[str]:
     doc = fitz.open(pdf_path)  # 문서 열기
     image_paths = []
-    
+
     # 이미지 저장용 폴더 생성
     output_folder = "files/indexed/images/주택청약_FAQ_202405/"
     if not os.path.exists(output_folder):
@@ -63,21 +72,20 @@ def convert_pdf_to_images(pdf_path: str, dpi: int = 250) -> List[str]:
 
         zoom = dpi / 72  # 72이 디폴트 DPI
         mat = fitz.Matrix(zoom, zoom)
-        pix = page.get_pixmap(matrix=mat) # type: ignore
+        pix = page.get_pixmap(matrix=mat)  # type: ignore
 
-        image_path = os.path.join(output_folder, f"page_{page_num + 1}.png")  # 페이지 이미지 저장 page_1.png, page_2.png, etc.
+        image_path = os.path.join(
+            output_folder, f"page_{page_num + 1}.png"
+        )  # 페이지 이미지 저장 page_1.png, page_2.png, etc.
         pix.save(image_path)  # PNG 형태로 저장
         image_paths.append(image_path)  # 경로를 저장
-        
+
     return image_paths
 
-def display_pdf_page(image_path: str, page_number: int) -> None:
-    image_bytes = open(image_path, "rb").read()  # 파일에서 이미지 인식
-    # st.image(image_bytes, caption=f"Page {page_number}", output_format="PNG", width=600)
 
 def natural_sort_key(s):
-    return [int(text) if text.isdigit() else text for text in re.split(r'(\d+)', s)]
-    
+    return [int(text) if text.isdigit() else text for text in re.split(r"(\d+)", s)]
+
 
 # 마크다운 문서로 참고 문서 요약 정리
 def convertMarkdown() -> Runnable:
@@ -88,12 +96,14 @@ def convertMarkdown() -> Runnable:
     - 제목: 참고 문서 정리
         문서: {document}
     """
-    
+
     custom_rag_prompt = PromptTemplate.from_template(template)
     model = ChatOpenAI(model="gpt-4o-mini")
 
     return custom_rag_prompt | model | StrOutputParser()
 
+
+# RAG Chain
 def get_rag_chain() -> Runnable:
     template = """
     다음의 컨텍스트를 활용해서 질문에 답변해줘
@@ -113,70 +123,88 @@ def get_rag_chain() -> Runnable:
 
     return custom_rag_prompt | model | StrOutputParser()
 
+
 # 사용자 질문에 대한 RAG 처리
-def process_question(user_question: str):
+def process_question(user_question: str, include_additional_info: bool):
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
-    
+
     ## 벡터 DB 호출
-    new_db = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
+    new_db = FAISS.load_local(
+        "faiss_index", embeddings, allow_dangerous_deserialization=True
+    )
 
     ## 관련 문서 3개를 호출하는 Retriever 생성
     retriever = new_db.as_retriever(search_kwargs={"k": 3})
-    
-    ## 사용자 질문을 기반으로 관련문서 3개 검색 
-    retrieve_docs : List[Document] = retriever.invoke(user_question)
+
+    ## 사용자 질문을 기반으로 관련문서 3개 검색
+    retrieve_docs: List[Document] = retriever.invoke(user_question)
 
     ## RAG 체인 선언
     chain = get_rag_chain()
-    
+
     ## 질문과 문맥을 넣어서 체인 결과 호출
     response = chain.invoke({"question": user_question, "context": retrieve_docs})
-    
+
     ## 마크다운으로 변환
-    chain = convertMarkdown()
-    markdownResponse = chain.invoke({
-            "document": retrieve_docs
-        })
+    if include_additional_info:
+        chain = convertMarkdown()
+        markdownResponse = chain.invoke({"document": retrieve_docs})
+        return response, markdownResponse, retrieve_docs
 
-    return response, markdownResponse, retrieve_docs
+    return response, "", retrieve_docs
 
-@app.get("/image/{page_number}")
-def fetchImage(page_number: int):
+
+# ┌───────────────── DTO ───────────────────────────
+class ChatbotCompletionsRequest(BaseModel):
+    question: str
+    include_additional_info: bool
+
+
+# ┌───────────────── API ───────────────────────────
+@app.post("/api/v1/chatbot/completions")
+def completions(request: ChatbotCompletionsRequest):
+    print(request.question)
+    # 사용자 질문 처리
+    response, markdownResponse, context = process_question(
+        request.question, request.include_additional_info
+    )
+
+    # 메타데이터 설정
+    documents = []
+    for document in context:
+        documents.append(
+            {"page_content": document.page_content, "metadata": document.metadata}
+        )
+
+    # PDF 이미지 설정
     image_folder = "./files/indexed/images/주택청약_FAQ_202405/"
     images = sorted(os.listdir(image_folder), key=natural_sort_key)
-    image_paths = [os.path.join(image_folder, image) for  image in images]
-    image_bytes = open(image_paths[page_number - 1], "rb").read()  # 파일에서 이미지 인식
-    return Response(content=image_bytes, media_type="image/png") # 또는 "image/png"
+    image_paths = [os.path.join(image_folder, image) for image in images]
 
-@app.get("/question/{question}")
-def question(question: str):
-    # 환경변수 불러오기
-    load_dotenv()
-    
-    print(question)
-    
-    # 사용자 질문 처리
-    response, markdownResponse, context = process_question(question)
-    
+    pdf_images_base64 = []
+    for document in context:
+        page_num = document.metadata.get("page")
+        image_bytes = open(image_paths[page_num - 1], "rb").read()
+
+        # bytes를 base64 문자열로 변환
+        base64_encoded = base64.b64encode(image_bytes).decode("utf-8")
+        pdf_images_base64.append(base64_encoded)
+
+    answer = response
+    markdown_summary = markdownResponse
+
     return {
-            "content": response,
-            "markdown": markdownResponse,
-            "documents": [{"page_content": doc.page_content, "metadata": doc.metadata} for doc in context]
+        "markdown_summary": markdown_summary,
+        "pdf_images_base64": pdf_images_base64,
+        "answer": answer,
+        "documents": documents,
     }
 
-# 벡터 DB에 등록된 파일 정보를 Json으로 응답한다.
-@app.get("/vector-db/files")
-def getRegisteredFiles():
-    dir_list = os.listdir('./files/indexed/')
-    print(dir_list)
-    return [{"file_name": item} for item in dir_list]
 
 @app.get("/")
 def root():
-    # 환경변수 불러오기
-    # load_dotenv()
-    # images =  convert_pdf_to_images("./files/indexed/주택청약_FAQ_202405.pdf")
     return {"message": "Hello World!"}
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

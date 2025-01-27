@@ -135,10 +135,10 @@ const Home = () => {
   };
 
   return (
-    <div className="h-screen pt-10">
+    <div className="h-screen pt-10 bg-gray-50">
       <div className="flex justify-center">
         <div>
-          <Card className="flex flex-col w-[700px] h-[705px] rounded-r-none">
+          <Card className="flex flex-col w-[700px] h-[705px] rounded-r-none shadow-xl">
             <Menubar className="border-s-0 border-t-0 border-r-0 rounded-b-none rounded-r-none">
               <MenubarMenu>
                 <MenubarTrigger>File</MenubarTrigger>
@@ -316,7 +316,7 @@ const Home = () => {
           </Card>
         </div>
 
-        <Card className="w-[600px] h-[705px] border-s-0 rounded-b-none rounded-s-none ms-0">
+        <Card className="w-[600px] h-[705px] border-s-0 rounded-s-none ms-0 shadow-[5px_5px_15px_-3px_rgba(0,0,0,0.2)]">
           <CardHeader>
             <CardTitle>
               <div className="flex justify-between">

@@ -75,7 +75,16 @@ const Home = () => {
 
     setIsLoading(true);
 
-    fetch(`http://localhost:8000/api/v1/chatbot/completions/${message.content}`)
+    fetch(`http://localhost:8000/api/v1/chatbot/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        question: message.content,
+        include_additional_info: includeAdditionalInfo,
+      }),
+    })
       .then((res) => res.json())
       .then((res) => {
         setMarkdownSummary(res.markdown_summary);
@@ -220,7 +229,7 @@ const Home = () => {
             <CardDescription>
               해당 기능을 켜면 AI가 요약 정리 및 어떤 문서를 참고했는지 확인할
               수 있습니다. <br />
-              빠른 답변이 필요하다면 끄는 것을 추천합니다
+              신속한 답변이 필요하시다면 끄는 것을 권장합니다
             </CardDescription>
           </CardHeader>
           <div className="h-[560px]">
@@ -234,7 +243,7 @@ const Home = () => {
 
                 {/* 마크다운 */}
                 <TabsContent value="markdown" className="h-full">
-                  {!documents.length ? (
+                  {documents.length <= 0 || !markdownSummary ? (
                     <div className="w-full h-full flex items-center justify-center">
                       <div>
                         <div className="flex justify-center">
@@ -256,7 +265,7 @@ const Home = () => {
                 {/* PDF */}
                 <TabsContent value="pdf" className="h-full w-full">
                   <div className="h-full">
-                    {!documents.length ? (
+                    {documents.length <= 0 || !markdownSummary ? (
                       <div className="w-full h-full flex items-center justify-center">
                         <div>
                           <div className="flex justify-center">
@@ -291,7 +300,7 @@ const Home = () => {
                     collapsible
                     className="w-full h-full"
                   >
-                    {!documents.length && (
+                    {documents.length <= 0 || !markdownSummary ? (
                       <div className="w-full h-full flex items-center justify-center">
                         <div>
                           <div className="flex justify-center">
@@ -302,20 +311,25 @@ const Home = () => {
                           </p>
                         </div>
                       </div>
+                    ) : (
+                      <div>
+                        {documents.map((document, index) => (
+                          <AccordionItem
+                            value={document.page_content}
+                            key={index}
+                          >
+                            <AccordionTrigger>
+                              컨텍스트 {index + 1}
+                            </AccordionTrigger>
+                            <AccordionContent className="w-full overflow-hidden">
+                              <pre className="p-4 bg-gray-100">
+                                {formatJson(document.metadata)}
+                              </pre>
+                            </AccordionContent>
+                          </AccordionItem>
+                        ))}
+                      </div>
                     )}
-
-                    {documents.map((document, index) => (
-                      <AccordionItem value={document.page_content} key={index}>
-                        <AccordionTrigger>
-                          컨텍스트 {index + 1}
-                        </AccordionTrigger>
-                        <AccordionContent className="w-full overflow-hidden">
-                          <pre className="p-4 bg-gray-100">
-                            {formatJson(document.metadata)}
-                          </pre>
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
                   </Accordion>
                 </TabsContent>
               </Tabs>

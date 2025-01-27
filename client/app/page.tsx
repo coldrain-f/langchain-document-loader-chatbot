@@ -22,22 +22,6 @@ import {
 } from "@/components/ui/accordion";
 
 import {
-  Menubar,
-  MenubarCheckboxItem,
-  MenubarContent,
-  MenubarItem,
-  MenubarMenu,
-  MenubarRadioGroup,
-  MenubarRadioItem,
-  MenubarSeparator,
-  MenubarShortcut,
-  MenubarSub,
-  MenubarSubContent,
-  MenubarSubTrigger,
-  MenubarTrigger,
-} from "@/components/ui/menubar";
-
-import {
   Carousel,
   CarouselContent,
   CarouselItem,
@@ -50,47 +34,21 @@ import { Switch } from "@/components/ui/switch";
 
 import ReactMarkdown from "react-markdown";
 
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-}
+import type {
+  Message,
+  Metadata,
+  Document,
+  ApiResponse,
+} from "@/app/types/common";
 
-interface Metadata {
-  author: string;
-  creationdate: string;
-  creator: string;
-  file_path: string;
-  format: string;
-  keywords: string;
-  moddate: string;
-  page: number;
-  producer: string;
-  source: string;
-  subject: string;
-  title: string;
-  total_pages: number;
-  trapped: string;
-}
-
-interface Document {
-  metadata: Metadata;
-  page_content: string;
-}
-
-interface ApiResponse {
-  documents: Document[];
-  markdown: string;
-  content: string;
-}
+const defaultMessage: Message = {
+  role: "assistant",
+  content:
+    "저는 주택청약과 관련된 정보와 질문에 대한 답변을 도와드릴 수 있습니다. 청약 자격, 거주의무, 우선공급 조건 등 다양한 주제에 대해 설명해 드릴 수 있습니다. 궁금한 점이 있으시면 언제든지 질문해 주세요!",
+};
 
 const Home = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content:
-        "저는 주택청약과 관련된 정보와 질문에 대한 답변을 도와드릴 수 있습니다. 청약 자격, 거주의무, 우선공급 조건 등 다양한 주제에 대해 설명해 드릴 수 있습니다. 궁금한 점이 있으시면 언제든지 질문해 주세요!",
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([defaultMessage]);
   const [message, setMessage] = useState<Message>();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isDone, setIsDone] = useState(true);
@@ -103,8 +61,6 @@ const Home = () => {
   const [image2, setImage2] = useState();
   const [image3, setImage3] = useState();
 
-  // 파일 이름 배열
-  const [fileNames, setFileNames] = useState([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

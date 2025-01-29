@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # 기타 라이브러리 Import
-from fastapi import FastAPI, Response
+from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List
 

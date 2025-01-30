@@ -116,6 +116,7 @@ def process_question(user_question: str, include_additional_info: bool):
         markdown_prompt = PromptTemplate.from_template(
             """Use the following document to write a summary Markdown in Korean.
             Don't create a Markdown Table.
+            Please do not make it ```markdown”, but write it in normal markdown syntax.
             Title: 참고 문서 정리
             #Document: {document}"""
         )

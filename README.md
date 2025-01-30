@@ -1,4 +1,4 @@
-# Overview
+![image](https://github.com/user-attachments/assets/419957c3-2773-485d-8865-e89441cd0867)# Overview
 
 ![image](https://github.com/user-attachments/assets/5e3fa102-9e8e-4d00-9b8d-3ba8a93aedf7)
 
@@ -35,6 +35,7 @@
 
 ## RAG 프로세스
 ### 데이터 전처리(Data Preprocessing)
-![image](https://github.com/user-attachments/assets/a26a5136-6e59-4980-b04e-a73640e858ad)
+![image](https://github.com/user-attachments/assets/aa74ed2b-f5d8-450e-b636-99857dcc75e0)
+
 
 

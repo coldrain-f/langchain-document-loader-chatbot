@@ -2,6 +2,10 @@
 
 본 프로젝트는 LangChain 프레임워크와 OpenAI의 대규모 언어 모델(LLM)을 기반으로 한 검색 증강 생성(RAG) 시스템입니다. 사용자와의 자연스러운 대화를 통해 문서 기반 지식을 제공하는 대화형 인터페이스를 구현했습니다.
 
+![image](https://github.com/user-attachments/assets/5e3fa102-9e8e-4d00-9b8d-3ba8a93aedf7)
+
+
+
 ## 기술 스택
 
 **프론트엔드**
